@@ -1,0 +1,145 @@
+from google.cloud import documentai_v1beta3 as documentai
+from google.cloud import storage
+from prettytable import PrettyTable
+
+project_id = %system gcloud config get-value core/project
+project_id = project_id[0]
+location = 'us'
+file_path = 'form.pdf' 
+processor_id = 'PROCESSOR_ID' # TODO: Replace with a valid Processor ID   
+def process_document(
+        project_id=project_id, location=location,
+        processor_id=processor_id,  file_path=file_path 
+):
+    # Instantiates a client
+    client = documentai.DocumentProcessorServiceClient()
+    # The full resource name of the processor, e.g.:
+    # projects/project-id/locations/location/processor/processor-id
+    # You must create new processors in the Cloud Console first
+    name = f"projects/{project_id}/locations/{location}/processors/{processor_id}"
+    with open(file_path, "rb") as image:
+        image_content = image.read()
+    # Read the file into memory
+    document = {"content": image_content, "mime_type": "application/pdf"}
+    # Configure the process request
+    request = {"name": name, "document": document}
+    # Use the Document AI client to process the sample form
+    result = client.process_document(request=request)
+    return result.document
+
+document=process_document()
+# print all detected text. 
+# All document processors will display the text content
+print("Document processing complete.")
+print("Text: {}".format(document.text))
+
+
+
+def get_text(doc_element: dict, document: dict):
+    """
+    Document AI identifies form fields by their offsets
+    in document text. This function converts offsets
+    to text snippets.
+    """
+    response = ""
+    # If a text segment spans several lines, it will
+    # be stored in different text segments.
+    for segment in doc_element.text_anchor.text_segments:
+        start_index = (
+            int(segment.start_index)
+            if segment in doc_element.text_anchor.text_segments
+            else 0
+        )
+        end_index = int(segment.end_index)
+        response += document.text[start_index:end_index]
+    return response
+
+
+document_pages = document.pages
+print("Form data detected:\n")
+# For each page fetch each form field and display fieldname, value and confidence scores
+for page in document_pages:
+    print("Page Number:{}".format(page.page_number))
+    for form_field in page.form_fields:
+        fieldName=get_text(form_field.field_name,document)
+        nameConfidence = round(form_field.field_name.confidence,4)
+        fieldValue = get_text(form_field.field_value,document)
+        valueConfidence = round(form_field.field_value.confidence,4)
+        print(fieldName+fieldValue +"  (Confidence Scores: (Name) "+str(nameConfidence)+", (Value) "+str(valueConfidence)+")\n")
+
+if 'entities' in dir(document):
+    entities = document.entities
+    # Grab each key/value pair and their confidence scores.
+    table = PrettyTable(['Type', 'Value', 'Confidence'])
+    for entity in entities:
+    entity_type = entity.type_
+    value = entity.mention_text
+    confience = round(entity.confidence,4)
+    table.add_row([entity_type, value, confience])
+    print(table)
+else:
+    print("Document does not contain entity data.")
+
+
+////////////////////////
+
+
+async :
+
+
+from google.cloud import documentai_v1beta3 as documentai
+from google.cloud import storage
+
+import re
+import os
+import pandas as pd
+import simplejson as json
+
+processor_id = "PROCESSOR_ID"  # TODO: Replace with a valid Processor ID 
+
+
+project_id = %system gcloud config get-value core/project
+project_id = project_id[0]
+location = 'us'           # Replace with 'eu' if processor does not use 'us' location
+gcs_input_bucket  = project_id+"_doc_ai_async"   # Bucket name only, no gs:// prefix
+gcs_input_prefix  = "input/"                     # Input bucket folder e.g. input/
+gcs_output_bucket = project_id+"_doc_ai_async"   # Bucket name only, no gs:// prefix
+gcs_output_prefix = "output/"                    # Input bucket folder e.g. output/
+timeout = 300
+
+
+client_options = {"api_endpoint": "{}-documentai.googleapis.com".format(location)}
+client = documentai.DocumentProcessorServiceClient(client_options=client_options)
+storage_client = storage.Client()
+
+blobs = storage_client.list_blobs(gcs_input_bucket, prefix=gcs_input_prefix)
+input_configs = []
+print("Input Files:")
+for blob in blobs:
+    if ".pdf" in blob.name:
+        source = "gs://{bucket}/{name}".format(bucket = gcs_input_bucket, name = blob.name)
+        print(source)
+        input_config = documentai.types.document_processor_service.BatchProcessRequest.BatchInputConfig(
+            gcs_source=source, mime_type="application/pdf"
+        )
+        input_configs.append(input_config)
+
+
+
+destination_uri = f"gs://{gcs_output_bucket}/{gcs_output_prefix}"
+output_config = documentai.types.document_processor_service.BatchProcessRequest.BatchOutputConfig(
+    gcs_destination=destination_uri
+)
+
+
+name = f"projects/{project_id}/locations/{location}/processors/{processor_id}"
+request = documentai.types.document_processor_service.BatchProcessRequest(
+    name=name,
+    input_configs=input_configs,
+    output_config=output_config,
+)
+
+operation = client.batch_process_documents(request)
+# Wait for the operation to finish
+operation.result(timeout=timeout)
+print ("Batch process  completed.")
