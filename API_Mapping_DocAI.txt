@@ -1,0 +1,162 @@
+To help you achieve your full task of reading extracted JSON from documents, mapping it to the required API request structure, and invoking the API to load the data into the platform, I'll break the process into clear steps. Here's a detailed approach:
+
+Steps:
+Read the extracted JSON data from the document stored in a Google Cloud Storage (GCS) bucket.
+Map the extracted data to the required API structure.
+Invoke the API to load the mapped data into the platform.
+Python Script to Achieve the Full Task:
+You’ll need:
+
+Google Cloud Storage SDK to read the extracted JSON from the bucket.
+Mapping logic to convert the extracted JSON into the required API structure.
+Requests library to make the API call and load the mapped data into the platform.
+First, install the required libraries:
+
+bash
+Copy code
+pip install google-cloud-storage requests
+Full Python Code:
+python
+Copy code
+import json
+import requests
+from google.cloud import storage
+
+# Function to download the JSON file from GCS
+def download_json_from_gcs(bucket_name, json_file_path):
+    try:
+        # Initialize a storage client
+        client = storage.Client()
+
+        # Get the bucket
+        bucket = client.bucket(bucket_name)
+
+        # Get the blob (file) from the bucket
+        blob = bucket.blob(json_file_path)
+
+        # Download the contents of the blob as a string
+        json_data = blob.download_as_text()
+
+        # Parse the string as JSON
+        json_content = json.loads(json_data)
+        
+        return json_content
+    except Exception as e:
+        print(f"Error downloading JSON from GCS: {e}")
+        return None
+
+# Function to map extracted JSON data to the API request structure
+def map_extracted_data_to_api_structure(extracted_data):
+    try:
+        # Example mapping: Adjust this according to your specific API requirements
+        api_mapped_data = {
+            "CaseDetails": {
+                "IVANumber": extracted_data.get("IVANumber", ""),
+                "ProposalType": extracted_data.get("ProposalType", "")
+            },
+            "ConsumerDetails": {
+                "Salutation": extracted_data.get("Salutation", ""),
+                "Forename": extracted_data.get("Forename", ""),
+                "Surname": extracted_data.get("Surname", ""),
+                "DateOfBirth": extracted_data.get("DateOfBirth", ""),
+                "Martialstatus": extracted_data.get("Martialstatus", ""),
+                "Dependents": extracted_data.get("Dependents", []),
+                "Addresses": extracted_data.get("Addresses", [])
+            }
+        }
+        return api_mapped_data
+    except Exception as e:
+        print(f"Error mapping data: {e}")
+        return None
+
+# Function to post JSON data to the platform
+def post_json_data(api_url, mapped_data):
+    try:
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(api_url, json=mapped_data, headers=headers)
+
+        if response.status_code == 201 or response.status_code == 200:
+            print(f"Successfully posted JSON data. Response: {response.json()}")
+        else:
+            print(f"Failed to post JSON data. Status code: {response.status_code}, Response: {response.text}")
+    except Exception as e:
+        print(f"Error posting JSON data: {e}")
+
+if __name__ == "__main__":
+    # Google Cloud Storage bucket name and JSON file path
+    bucket_name = 'your-gcs-bucket-name'
+    json_file_path = 'folder-path/your-json-file.json'
+
+    # Example platform API URL (replace with actual platform URL)
+    api_url = 'https://example-platform.com/post-endpoint'
+
+    # Step 1: Download JSON data from GCS
+    extracted_data = download_json_from_gcs(bucket_name, json_file_path)
+
+    if extracted_data:
+        # Step 2: Map the extracted data to the API structure
+        mapped_data = map_extracted_data_to_api_structure(extracted_data)
+        
+        if mapped_data:
+            # Step 3: Post the mapped data to the platform
+            post_json_data(api_url, mapped_data)
+        else:
+            print("Failed to map extracted data.")
+    else:
+        print("No JSON data to process.")
+How it Works:
+Download Extracted JSON from GCS:
+
+The script downloads the JSON from the GCS bucket using the google-cloud-storage library.
+The download_json_from_gcs function reads the JSON file content and returns it as a Python dictionary.
+Map Extracted Data to API Structure:
+
+The map_extracted_data_to_api_structure function transforms the raw JSON into the format required by the platform API.
+This is where you handle any data transformation or restructuring to ensure the data matches the format the platform expects. The example shows a basic mapping, but you will need to adjust the field names and structure based on the actual API specifications.
+Post Mapped Data to Platform:
+
+The post_json_data function makes an HTTP POST request to the platform's API endpoint.
+It sends the transformed (mapped) data as a JSON payload to the platform.
+Replace the following:
+your-gcs-bucket-name: The name of your GCS bucket.
+folder-path/your-json-file.json: The path to the JSON file in the bucket.
+api_url: Replace this with the actual API endpoint URL of the platform where the data needs to be posted.
+Mapping Logic:
+In the map_extracted_data_to_api_structure function, you will need to write the logic to map fields from the extracted JSON to the fields expected by the platform API.
+For example, if the API expects IVANumber as a field in the JSON, but your extracted data has a different key, you need to ensure the mapping matches correctly.
+Example JSON Data:
+Let's assume your extracted JSON looks like this:
+
+json
+Copy code
+{
+  "IVANumber": "GenBY29CJMWND",
+  "ProposalType": "IVA",
+  "Salutation": "Mr",
+  "Forename": "Test",
+  "Surname": "Gen1",
+  "DateOfBirth": "1990-07-03",
+  "Martialstatus": "Single",
+  "Dependents": [
+    {
+      "Age": "16",
+      "ResidentFlag": true
+    }
+  ],
+  "Addresses": [
+    {
+      "Addressline1": "85 Lueliz Avenue",
+      "Addressline2": "Goldenerberg",
+      "Town": "Aurelix",
+      "Postcode": "SW14 8AW"
+    }
+  ]
+}
+After mapping, this data will be transformed to fit the structure expected by the API.
+
+Error Handling:
+The script includes basic error handling for downloading JSON, mapping the data, and posting it to the API. If any step fails, the error message will be printed to the console.
+Future Enhancements:
+Authentication: If the platform API requires authentication (e.g., Bearer token, OAuth), you can modify the post_json_data function to include authentication headers.
+Logging: Add proper logging mechanisms for production-level applications.
+This should fulfill your task of reading extracted JSON data, mapping it to the required API format, and posting it to a platform!
