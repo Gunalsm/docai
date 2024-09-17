@@ -26,6 +26,24 @@ def download_json_from_gcs(bucket_name, json_file_path):
         print(f"Error downloading JSON from GCS: {e}")
         return None
 
+# Custom function to format datetime to ISO 8601 format
+def format_datetime_to_iso(datetime_str):
+    try:
+        # Attempt to parse different datetime formats
+        # Adjust formats as needed based on the possible input formats
+        for fmt in ('%Y-%m-%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%d/%m/%Y %H:%M:%S', '%Y-%m-%dT%H:%M:%S'):
+            try:
+                dt = datetime.strptime(datetime_str, fmt)
+                return dt.isoformat()
+            except ValueError:
+                continue
+        
+        # If no format matches, return the original string
+        return datetime_str
+    except Exception as e:
+        print(f"Error formatting datetime: {e}")
+        return datetime_str  # If error, return the original string
+    
 # Custom function to format date from 'DD/MM/YYYY' to 'YYYY-MM-DD'
 def format_date_dd_mm_yyyy_to_yyyy_mm_dd(date_str):
     try:
@@ -45,6 +63,11 @@ def map_extracted_data_to_api_structure(extracted_data):
         if proposal_start_date:
             proposal_start_date = format_date_dd_mm_yyyy_to_yyyy_mm_dd(proposal_start_date)
         
+          # Format the CreditorMeetingDate using the custom datetime formatter
+        creditor_meeting_date = extracted_data.get("CreditorMeetingDate", "")
+        creditor_meeting_date = format_datetime_to_iso(creditor_meeting_date)
+        
+
         # Handle numeric fields: Default to 0 if missing
         total_liabilities = extracted_data.get("TotalLiabilities", 0)
         
@@ -60,7 +83,7 @@ def map_extracted_data_to_api_structure(extracted_data):
                 "IsProtocolCompliant": extracted_data.get("IsProtocolCompliant", ""),
                 "ProtocolCompliantException": extracted_data.get("ProtocolCompliantException", ""),
                 "ProposalStartDate": proposal_start_date,  # Only this field is formatted
-                "CreditorMeetingDate": extracted_data.get("CreditorMeetingDate", ""),  # No formatting applied
+                "CreditorMeetingDate": creditor_meeting_date,
                 "TotalLiabilities": total_liabilities,  # Numeric field, default to 0 if missing
                 "NomineeReport": extracted_data.get("NomineeReport", ""),
                 "IVAProposalComment": extracted_data.get("IVAProposalComment", ""),
