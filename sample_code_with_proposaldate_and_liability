@@ -1,0 +1,116 @@
+import json
+import requests
+from google.cloud import storage
+from datetime import datetime
+
+# Function to download the JSON file from GCS
+def download_json_from_gcs(bucket_name, json_file_path):
+    try:
+        # Initialize a storage client
+        client = storage.Client()
+
+        # Get the bucket
+        bucket = client.bucket(bucket_name)
+
+        # Get the blob (file) from the bucket
+        blob = bucket.blob(json_file_path)
+
+        # Download the contents of the blob as a string
+        json_data = blob.download_as_text()
+
+        # Parse the string as JSON
+        json_content = json.loads(json_data)
+        
+        return json_content
+    except Exception as e:
+        print(f"Error downloading JSON from GCS: {e}")
+        return None
+
+# Custom function to format date from 'DD/MM/YYYY' to 'YYYY-MM-DD'
+def format_date_dd_mm_yyyy_to_yyyy_mm_dd(date_str):
+    try:
+        # Convert the string from 'DD/MM/YYYY' to 'YYYY-MM-DD' format
+        return datetime.strptime(date_str, '%d/%m/%Y').strftime('%Y-%m-%d')
+    except Exception as e:
+        print(f"Error formatting date: {e}")
+        return date_str  # If error, return the original string
+
+# Function to map extracted JSON data to the API request structure
+def map_extracted_data_to_api_structure(extracted_data):
+    try:
+        # Format only the ProposalStartDate field using the custom date formatter
+        proposal_start_date = extracted_data.get("ProposalStartDate", "")
+        
+        # Apply date formatting only if the date is present
+        if proposal_start_date:
+            proposal_start_date = format_date_dd_mm_yyyy_to_yyyy_mm_dd(proposal_start_date)
+        
+        # Handle numeric fields: Default to 0 if missing
+        total_liabilities = extracted_data.get("TotalLiabilities", 0)
+        
+        # Example mapping: Adjust this according to your specific API requirements
+        api_mapped_data = {
+            "CaseDetails": {
+                "IPPractitionerForename": extracted_data.get("IPPractitionerForename"),
+                "IPPractitionerSurname": extracted_data.get("IPPractitionerSurname"),
+                "CourtName": extracted_data.get("CourtName"),
+                "IPCaseNumber": extracted_data.get("IPCaseNumber"),
+                "IVANumber": extracted_data.get("IVANumber", ""),
+                "ProposalType": extracted_data.get("ProposalType", ""),
+                "IsProtocolCompliant": extracted_data.get("IsProtocolCompliant", ""),
+                "ProtocolCompliantException": extracted_data.get("ProtocolCompliantException", ""),
+                "ProposalStartDate": proposal_start_date,  # Only this field is formatted
+                "CreditorMeetingDate": extracted_data.get("CreditorMeetingDate", ""),  # No formatting applied
+                "TotalLiabilities": total_liabilities,  # Numeric field, default to 0 if missing
+                "NomineeReport": extracted_data.get("NomineeReport", ""),
+                "IVAProposalComment": extracted_data.get("IVAProposalComment", ""),
+                "ConsumerHistory": extracted_data.get("ConsumerHistory", "")
+            },
+            "ConsumerDetails": {
+                "Salutation": extracted_data.get("Salutation", ""),
+                "Forename": extracted_data.get("Forename", ""),
+                "Surname": extracted_data.get("Surname", ""),
+                "DateOfBirth": extracted_data.get("DateOfBirth", ""),
+                "MaritalStatus": extracted_data.get("MaritalStatus", "")
+            }
+        }
+        return api_mapped_data
+    except Exception as e:
+        print(f"Error mapping data: {e}")
+        return None
+
+# Function to post JSON data to the platform
+def post_json_data(api_url, mapped_data):
+    try:
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(api_url, json=mapped_data, headers=headers)
+
+        if response.status_code == 201 or response.status_code == 200:
+            print(f"Successfully posted JSON data. Response: {response.json()}")
+        else:
+            print(f"Failed to post JSON data. Status code: {response.status_code}, Response: {response.text}")
+    except Exception as e:
+        print(f"Error posting JSON data: {e}")
+
+if __name__ == "__main__":
+    # Google Cloud Storage bucket name and JSON file path
+    bucket_name = 'your-gcs-bucket-name'
+    json_file_path = 'folder-path/your-json-file.json'
+
+    # Example platform API URL (replace with actual platform URL)
+    api_url = 'https://example-platform.com/post-endpoint'
+
+    # Step 1: Download JSON data from GCS
+    extracted_data = download_json_from_gcs(bucket_name, json_file_path)
+
+    if extracted_data:
+        # Step 2: Map the extracted data to the API structure
+        mapped_data = map_extracted_data_to_api_structure(extracted_data)
+        
+        if mapped_data:
+            # Step 3: Post the mapped data to the platform
+            post_json_data(api_url, mapped_data)
+        else:
+            print("Failed to map extracted data.")
+    else:
+        print("No JSON data to process.")
