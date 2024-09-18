@@ -240,14 +240,6 @@ def map_extracted_data_to_api_structure(extracted_data):
                 "IVAProposalComment": extracted_data.get("IVAProposalComment", ""),
                 "ConsumerHistory": extracted_data.get("ConsumerHistory", "")
             },
-            # "ConsumerDetails": {
-            #     "Salutation": extracted_data.get("Salutation", ""),
-            #     "Forename": extracted_data.get("Forename", ""),
-            #     "Surname": extracted_data.get("Surname", ""),
-            #     "DateOfBirth": extracted_data.get("DateOfBirth", ""),
-            #     "MaritalStatus": extracted_data.get("MaritalStatus", "")
-            # }
-
              "ConsumerDetails": {
                 "Salutation": extracted_data.get("Salutation", ""),
                 "Forename": extracted_data.get("Forename", ""),
@@ -255,7 +247,7 @@ def map_extracted_data_to_api_structure(extracted_data):
                 "DateOfBirth": extracted_data.get("DateOfBirth", ""),
                 "MaritalStatus": extracted_data.get("MaritalStatus", ""),
                 "NumberOfAdultsLivingInHouseHold": numberOfAdultsLivingInHouseHold,
-                "ResidentialStatus": extracted_data.ge("ResidentialStatus", ""),
+                "ResidentialStatus": extracted_data.get("ResidentialStatus", ""),
                 "EmploymentStatus": extracted_data.get("EmploymentStatus", ""),
                 "Employer": extracted_data.get("Employer", ""),
                 "Occupation": extracted_data.get("Occupation", ""),
