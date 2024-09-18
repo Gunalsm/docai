@@ -254,7 +254,75 @@ def map_extracted_data_to_api_structure(extracted_data):
                 "NumberOfCars": numberOfCars,
                 
              },
-            "Expenditure": expenditure_mapped["Expenditure"]
+             "IncomeAndBenefits": {
+                "Income": [
+                    {
+                        "Type": income.get("Type", ""),
+                        "Source": income.get("Source", ""),
+                        "Value": income.get("Value", 0.0),
+                        "Comment": income.get("Comment", "")
+                    } for income in extracted_data.get("Income", [])
+                ],
+                "Benefits": [
+                    {
+                        "Type": benefit.get("Type", ""),
+                        "Source": benefit.get("Source", ""),
+                        "Value": benefit.get("Value", 0.0),
+                        "Comment": benefit.get("Comment", "")
+                    } for benefit in extracted_data.get("Benefits", [])
+                ]
+            },
+             "Expenditure": expenditure_mapped["Expenditure"],
+             "Arrangements": {
+        "ProposalValue": extracted_data.get("ProposalValue", 0.0),
+        "ProposedBankruptcyDividend": extracted_data.get("ProposedBankruptcyDividend", 0.0),
+        "ProposedIVADividend": extracted_data.get("ProposedIVADividend", 0.0),
+        "TotalUnsecuredDebt": extracted_data.get("TotalUnsecuredDebt", 0.0),
+        "FeesAndExpenses": {
+            "NomineeFee": extracted_data.get("NomineeFee", 0.0),
+            "SupervisorFee": extracted_data.get("SupervisorFee", 0.0),
+            "IPDisbursements": [
+                {
+                    "Type": disbursement.get("Type", ""),
+                    "Value": disbursement.get("Value", 0.0)
+                } for disbursement in extracted_data.get("IPDisbursements", [])
+            ]
+        },
+        "Contributions": {
+            "IVADuration": extracted_data.get("IVADuration", 0),
+            "ContributionItems": [
+                {
+                    "NumberOfContributions": item.get("NumberOfContributions", 0),
+                    "Value": item.get("Value", 0.0),
+                    "Frequency": item.get("Frequency", ""),
+                    "Sequence": item.get("Sequence", 0)
+                } for item in extracted_data.get("ContributionItems", [])
+            ]
+        }
+    },
+    "ConsumerAccounts": {
+        "AssociatedValue": extracted_data.get("AssociatedValue", 0.0),
+        "PreferentialValue": extracted_data.get("PreferentialValue", 0.0),
+        "Accounts": [
+            {
+                "ProposalAmount": account.get("ProposalAmount", 0.0),
+                "AccountReference": account.get("AccountReference", ""),
+                "IPAccountIdentifier": account.get("IPAccountIdentifier", ""),
+                "BrandName": account.get("BrandName", ""),
+                "ProductType": account.get("ProductType", ""),
+                "JointAccountFlag": account.get("JointAccountFlag", False)
+            } for account in extracted_data.get("Accounts", [])
+        ],
+        "SecuredDebts": [
+            {
+                "Type": debt.get("Type", ""),
+                "ValueRemaining": debt.get("ValueRemaining", 0.0),
+                "MonthlyContribution": debt.get("MonthlyContribution", 0.0),
+                "Comment": debt.get("Comment", "")
+            } for debt in extracted_data.get("SecuredDebts", [])
+        ]
+    }
+
         }
         return api_mapped_data
     except Exception as e:
