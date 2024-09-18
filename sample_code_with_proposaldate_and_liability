@@ -117,6 +117,111 @@ def map_extracted_data_to_api_structure(extracted_data):
         numberOfAdultsLivingInHouseHold = extracted_data.get("NumberOfAdultsLivingInHouseHold", 0)
         numberOfCars = extracted_data.get("NumberOfCars", 0)
 
+          # Mapping Expenditure - FixedCosts and FlexibleCosts
+        expenditure = extracted_data.get("Expenditure", {})
+        fixed_costs = expenditure.get("SFS", {}).get("FixedCosts", {})
+        flexible_costs = expenditure.get("SFS", {}).get("FlexibleCosts", {})
+        
+        expenditure_mapped = {
+            "Expenditure": {
+                "SFS": {
+                    "FixedCosts": {
+                        "HomeContents": {
+                            "Rent": fixed_costs.get("HomeContents", {}).get("Rent", 0),
+                            "GroundRentServiceCharges": fixed_costs.get("HomeContents", {}).get("GroundRentServiceCharges", 0),
+                            "Mortgage": fixed_costs.get("HomeContents", {}).get("Mortgage", 0),
+                            "MortgageEndowment": fixed_costs.get("HomeContents", {}).get("MortgageEndowment", 0),
+                            "SecuredLoans": fixed_costs.get("HomeContents", {}).get("SecuredLoans", 0),
+                            "CouncilTaxRates": fixed_costs.get("HomeContents", {}).get("CouncilTaxRates", 0),
+                            "ApplianceFurnitureRental": fixed_costs.get("HomeContents", {}).get("ApplianceFurnitureRental", 0),
+                            "TVLicence": fixed_costs.get("HomeContents", {}).get("TVLicence", 0),
+                            "OtherHomeContents": fixed_costs.get("HomeContents", {}).get("OtherHomeContents", 0)
+                        },
+                        "Utilities": {
+                            "Gas": fixed_costs.get("Utilities", {}).get("Gas", 0),
+                            "Electricity": fixed_costs.get("Utilities", {}).get("Electricity", 0),
+                            "OtherUtilities": fixed_costs.get("Utilities", {}).get("OtherUtilities", 0),
+                            "OtherUtilitiesExpenditure": fixed_costs.get("Utilities", {}).get("OtherUtilitiesExpenditure", 0)
+                        },
+                        "Water": {
+                            "WaterSupply": fixed_costs.get("Water", {}).get("WaterSupply", 0),
+                            "WaterWaste": fixed_costs.get("Water", {}).get("WaterWaste", 0)
+                        },
+                        "CareHealth": {
+                            "ChildcareCosts": fixed_costs.get("CareHealth", {}).get("ChildcareCosts", 0),
+                            "AdultCareCosts": fixed_costs.get("CareHealth", {}).get("AdultCareCosts", 0),
+                            "ChildMaintenanceChildSupport": fixed_costs.get("CareHealth", {}).get("ChildMaintenanceChildSupport", 0),
+                            "PrescriptionsMedicines": fixed_costs.get("CareHealth", {}).get("PrescriptionsMedicines", 0),
+                            "DentistryOpticians": fixed_costs.get("CareHealth", {}).get("DentistryOpticians", 0),
+                            "OtherCareHealth": fixed_costs.get("CareHealth", {}).get("OtherCareHealth", 0)
+                        },
+                        "TransportTravel": {
+                            "PublicTransport": fixed_costs.get("TransportTravel", {}).get("PublicTransport", 0),
+                            "HirePurchaseConditionalSaleVehicle": fixed_costs.get("TransportTravel", {}).get("HirePurchaseConditionalSaleVehicle", 0),
+                            "CarInsurance": fixed_costs.get("TransportTravel", {}).get("CarInsurance", 0),
+                            "RoadTax": fixed_costs.get("TransportTravel", {}).get("RoadTax", 0),
+                            "MOTOngoingMaintenance": fixed_costs.get("TransportTravel", {}).get("MOTOngoingMaintenance", 0),
+                            "BreakdownCover": fixed_costs.get("TransportTravel", {}).get("BreakdownCover", 0),
+                            "FuelParkingTollRoadCharges": fixed_costs.get("TransportTravel", {}).get("FuelParkingTollRoadCharges", 0),
+                            "OtherTransportTravel": fixed_costs.get("TransportTravel", {}).get("OtherTransportTravel", 0)
+                        },
+                        "School": {
+                            "SchoolUniform": fixed_costs.get("School", {}).get("SchoolUniform", 0),
+                            "AfterSchoolClubsSchoolTrips": fixed_costs.get("School", {}).get("AfterSchoolClubsSchoolTrips", 0),
+                            "OtherSchool": fixed_costs.get("School", {}).get("OtherSchool", 0)
+                        },
+                        "PensionsInsurances": {
+                            "PensionPayments": fixed_costs.get("PensionsInsurances", {}).get("PensionPayments", 0),
+                            "LifeInsurance": fixed_costs.get("PensionsInsurances", {}).get("LifeInsurance", 0),
+                            "MortgagePaymentProtectionInsurance": fixed_costs.get("PensionsInsurances", {}).get("MortgagePaymentProtectionInsurance", 0),
+                            "BuildingsContentsInsurance": fixed_costs.get("PensionsInsurances", {}).get("BuildingsContentsInsurance", 0),
+                            "HealthInsurance": fixed_costs.get("PensionsInsurances", {}).get("HealthInsurance", 0),
+                            "OtherPensionsInsurances": fixed_costs.get("PensionsInsurances", {}).get("OtherPensionsInsurances", 0)
+                        },
+                        "Professional": {
+                            "ProfessionalCourses": fixed_costs.get("Professional", {}).get("ProfessionalCourses", 0),
+                            "UnionFees": fixed_costs.get("Professional", {}).get("UnionFees", 0),
+                            "ProfessionalFees": fixed_costs.get("Professional", {}).get("ProfessionalFees", 0),
+                            "OtherProfessional": fixed_costs.get("Professional", {}).get("OtherProfessional", 0)
+                        },
+                        "OtherEssential": {
+                            "OtherEssentialCosts": fixed_costs.get("OtherEssential", {}).get("OtherEssentialCosts", 0)
+                        }
+                    },
+                    "FlexibleCosts": {
+                        "CommunicationsLeisure": {
+                            "HomePhoneInternetTV": flexible_costs.get("CommunicationsLeisure", {}).get("HomePhoneInternetTV", 0),
+                            "MobilePhone": flexible_costs.get("CommunicationsLeisure", {}).get("MobilePhone", 0),
+                            "HobbiesLeisureSport": flexible_costs.get("CommunicationsLeisure", {}).get("HobbiesLeisureSport", 0),
+                            "Gifts": flexible_costs.get("CommunicationsLeisure", {}).get("Gifts", 0),
+                            "PocketMoney": flexible_costs.get("CommunicationsLeisure", {}).get("PocketMoney", 0),
+                            "NewspapersMagazinesStationeryPostage": flexible_costs.get("CommunicationsLeisure", {}).get("NewspapersMagazinesStationeryPostage", 0),
+                            "OtherCommunicationsLeisure": flexible_costs.get("CommunicationsLeisure", {}).get("OtherCommunicationsLeisure", 0),
+                            "CommunicationsLeisureTotal": flexible_costs.get("CommunicationsLeisure", {}).get("CommunicationsLeisureTotal", 0)
+                        },
+                        "FoodHousekeeping": {
+                            "Groceries": flexible_costs.get("FoodHousekeeping", {}).get("Groceries", 0),
+                            "NappiesBabyItems": flexible_costs.get("FoodHousekeeping", {}).get("NappiesBabyItems", 0),
+                            "SchoolWorkMeals": flexible_costs.get("FoodHousekeeping", {}).get("SchoolWorkMeals", 0),
+                            "LaundryDryCleaning": flexible_costs.get("FoodHousekeeping", {}).get("LaundryDryCleaning", 0),
+                            "Alcohol": flexible_costs.get("FoodHousekeeping", {}).get("Alcohol", 0),
+                            "SmokingProducts": flexible_costs.get("FoodHousekeeping", {}).get("SmokingProducts", 0),
+                            "VetBillsPetInsurance": flexible_costs.get("FoodHousekeeping", {}).get("VetBillsPetInsurance", 0),
+                            "HouseRepairsMaintenance": flexible_costs.get("FoodHousekeeping", {}).get("HouseRepairsMaintenance", 0),
+                            "OtherFoodHousekeeping": flexible_costs.get("FoodHousekeeping", {}).get("OtherFoodHousekeeping", 0),
+                            "FoodHousekeepingTotal": flexible_costs.get("FoodHousekeeping", {}).get("FoodHousekeepingTotal", 0)
+                        },
+                        "PersonalCosts": {
+                            "ClothingFootwear": flexible_costs.get("PersonalCosts", {}).get("ClothingFootwear", 0),
+                            "NappiesBabyItems": flexible_costs.get("PersonalCosts", {}).get("NappiesBabyItems", 0),
+                            "MedicalInsurancePrescriptions": flexible_costs.get("PersonalCosts", {}).get("MedicalInsurancePrescriptions", 0),
+                            "Healthcare": flexible_costs.get("PersonalCosts", {}).get("Healthcare", 0),
+                            "OtherPersonalCosts": flexible_costs.get("PersonalCosts", {}).get("OtherPersonalCosts", 0)
+                        }
+                    }
+                }
+            }
+        }
         # Example mapping: Adjust this according to your specific API requirements
         api_mapped_data = {
             "CaseDetails": {
@@ -156,7 +261,8 @@ def map_extracted_data_to_api_structure(extracted_data):
                 "Occupation": extracted_data.get("Occupation", ""),
                 "NumberOfCars": numberOfCars,
                 
-             }
+             },
+            "Expenditure": expenditure_mapped["Expenditure"]
         }
         return api_mapped_data
     except Exception as e:
