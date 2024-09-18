@@ -53,6 +53,44 @@ def format_date_dd_mm_yyyy_to_yyyy_mm_dd(date_str):
         print(f"Error formatting date: {e}")
         return date_str  # If error, return the original string
 
+def map_address_data(address_string):
+    try:
+        # Split the address by comma and strip any extra spaces
+        address_parts = [part.strip() for part in address_string.split(',')]
+
+        # Regular expression to identify the postcode (typically a UK postcode format)
+        postcode_pattern = r"[A-Z]{1,2}\d{1,2} ?\d[A-Z]{2}"
+
+        # Find and extract the postcode
+        postcode = next((part for part in address_parts if re.search(postcode_pattern, part)), "")
+
+        # The word before the postcode is the town
+        town_index = address_parts.index(postcode) - 1 if postcode else -1
+        town = address_parts[town_index] if town_index >= 0 else ""
+
+        # Map the other parts to AddressLine1, AddressLine2, and AddressLine3
+        address_line1 = address_parts[0] if len(address_parts) > 0 else ""
+        address_line2 = address_parts[1] if len(address_parts) > 1 else ""
+        address_line3 = address_parts[2] if len(address_parts) > 2 and town_index > 2 else ""
+
+        # Example mapping for a single address
+        mapped_address = {
+            "AddressLine1": address_line1,
+            "AddressLine2": address_line2,
+            "AddressLine3": address_line3,
+            "Town": town,
+            "Postcode": postcode,
+            "IsCurrentAddress": True,  # Default to true, as per requirement
+            "FromDate": ""  # Can be populated later if available
+        }
+
+        return mapped_address
+
+    except Exception as e:
+        print(f"Error parsing address: {e}")
+        return None
+
+
 # Function to map extracted JSON data to the API request structure
 def map_extracted_data_to_api_structure(extracted_data):
     try:
@@ -67,10 +105,18 @@ def map_extracted_data_to_api_structure(extracted_data):
         creditor_meeting_date = extracted_data.get("CreditorMeetingDate", "")
         creditor_meeting_date = format_datetime_to_iso(creditor_meeting_date)
         
+ # Check for addresses and map them
+        addresses = extracted_data.get("Addresses", [])
+        formatted_addresses = []
+        if len(addresses) > 0:
+            for address in addresses:
+                formatted_addresses.append(map_address_data(address))
 
         # Handle numeric fields: Default to 0 if missing
         total_liabilities = extracted_data.get("TotalLiabilities", 0)
-        
+        numberOfAdultsLivingInHouseHold = extracted_data.get("NumberOfAdultsLivingInHouseHold", 0)
+        numberOfCars = extracted_data.get("NumberOfCars", 0)
+
         # Example mapping: Adjust this according to your specific API requirements
         api_mapped_data = {
             "CaseDetails": {
@@ -89,13 +135,28 @@ def map_extracted_data_to_api_structure(extracted_data):
                 "IVAProposalComment": extracted_data.get("IVAProposalComment", ""),
                 "ConsumerHistory": extracted_data.get("ConsumerHistory", "")
             },
-            "ConsumerDetails": {
+            # "ConsumerDetails": {
+            #     "Salutation": extracted_data.get("Salutation", ""),
+            #     "Forename": extracted_data.get("Forename", ""),
+            #     "Surname": extracted_data.get("Surname", ""),
+            #     "DateOfBirth": extracted_data.get("DateOfBirth", ""),
+            #     "MaritalStatus": extracted_data.get("MaritalStatus", "")
+            # }
+
+             "ConsumerDetails": {
                 "Salutation": extracted_data.get("Salutation", ""),
                 "Forename": extracted_data.get("Forename", ""),
                 "Surname": extracted_data.get("Surname", ""),
                 "DateOfBirth": extracted_data.get("DateOfBirth", ""),
-                "MaritalStatus": extracted_data.get("MaritalStatus", "")
-            }
+                "MaritalStatus": extracted_data.get("MaritalStatus", ""),
+                "NumberOfAdultsLivingInHouseHold": numberOfAdultsLivingInHouseHold,
+                "ResidentialStatus": extracted_data.ge("ResidentialStatus", ""),
+                "EmploymentStatus": extracted_data.get("EmploymentStatus", ""),
+                "Employer": extracted_data.get("Employer", ""),
+                "Occupation": extracted_data.get("Occupation", ""),
+                "NumberOfCars": numberOfCars,
+                
+             }
         }
         return api_mapped_data
     except Exception as e:
