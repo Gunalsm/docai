@@ -55,33 +55,38 @@ def format_date_dd_mm_yyyy_to_yyyy_mm_dd(date_str):
 
 def map_address_data(address_string):
     try:
-        # Split the address by comma and strip any extra spaces
-        address_parts = [part.strip() for part in address_string.split(',')]
-
-        # Regular expression to identify the postcode (typically a UK postcode format)
+        # Split the address by newline character
+        address_parts = [part.strip() for part in address_string.split('\n')]
+        
+        # Check the last part for postcode
         postcode_pattern = r"[A-Z]{1,2}\d{1,2} ?\d[A-Z]{2}"
-
-        # Find and extract the postcode
-        postcode = next((part for part in address_parts if re.search(postcode_pattern, part)), "")
-
-        # The word before the postcode is the town
-        town_index = address_parts.index(postcode) - 1 if postcode else -1
-        town = address_parts[town_index] if town_index >= 0 else ""
-
-        # Map the other parts to AddressLine1, AddressLine2, and AddressLine3
+        postcode = ""
+        town = ""
+        
+        if address_parts:
+            last_part = address_parts[-1]
+            if re.search(postcode_pattern, last_part):
+                postcode = last_part
+                # Town is the part before the postcode
+                if len(address_parts) > 1:
+                    town = address_parts[-2]  # second last part is the town
+                else:
+                    town = ""
+        
+        # Address lines
         address_line1 = address_parts[0] if len(address_parts) > 0 else ""
         address_line2 = address_parts[1] if len(address_parts) > 1 else ""
-        address_line3 = address_parts[2] if len(address_parts) > 2 and town_index > 2 else ""
+        address_line3 = address_parts[2] if len(address_parts) > 2 else ""
 
-        # Example mapping for a single address
+        # Map the address data
         mapped_address = {
             "AddressLine1": address_line1,
             "AddressLine2": address_line2,
             "AddressLine3": address_line3,
             "Town": town,
             "Postcode": postcode,
-            "IsCurrentAddress": True,  # Default to true, as per requirement
-            "FromDate": ""  # Can be populated later if available
+            "IsCurrentAddress": True, 
+            "FromDate": "" 
         }
 
         return mapped_address
@@ -89,7 +94,6 @@ def map_address_data(address_string):
     except Exception as e:
         print(f"Error parsing address: {e}")
         return None
-
 
 # Function to map extracted JSON data to the API request structure
 def map_extracted_data_to_api_structure(extracted_data):
@@ -105,12 +109,15 @@ def map_extracted_data_to_api_structure(extracted_data):
         creditor_meeting_date = extracted_data.get("CreditorMeetingDate", "")
         creditor_meeting_date = format_datetime_to_iso(creditor_meeting_date)
         
- # Check for addresses and map them
-        addresses = extracted_data.get("Addresses", [])
+  # Extract and format addresses
+        addresses = extracted_data.get("address", {}).get("mentionText", "")
         formatted_addresses = []
         if len(addresses) > 0:
             for address in addresses:
-                formatted_addresses.append(map_address_data(address))
+                mapped_address = map_address_data(address)
+                if mapped_address:
+                    formatted_addresses.append(mapped_address)
+
 
         # Handle numeric fields: Default to 0 if missing
         total_liabilities = extracted_data.get("TotalLiabilities", 0)
@@ -252,6 +259,8 @@ def map_extracted_data_to_api_structure(extracted_data):
                 "Employer": extracted_data.get("Employer", ""),
                 "Occupation": extracted_data.get("Occupation", ""),
                 "NumberOfCars": numberOfCars,
+                "Addresses": formatted_addresses  # Include the formatted addresses here
+
                 
              },
              "IncomeAndBenefits": {
