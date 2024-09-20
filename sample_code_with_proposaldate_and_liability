@@ -53,40 +53,90 @@ def format_date_dd_mm_yyyy_to_yyyy_mm_dd(date_str):
         print(f"Error formatting date: {e}")
         return date_str  # If error, return the original string
 
+# def map_address_data(address_string):
+#     try:
+#         # Split the address by newline character
+#         address_parts = [part.strip() for part in address_string.split('\n')]
+        
+#         # Check the last part for postcode
+#         postcode_pattern = r"[A-Z]{1,2}\d{1,2} ?\d[A-Z]{2}"
+#         postcode = ""
+#         town = ""
+        
+#         if address_parts:
+#             last_part = address_parts[-1]
+#             if re.search(postcode_pattern, last_part):
+#                 postcode = last_part
+#                 # Town is the part before the postcode
+#                 if len(address_parts) > 1:
+#                     town = address_parts[-2]  # second last part is the town
+#                 else:
+#                     town = ""
+        
+#         # Address lines
+#         address_line1 = address_parts[0] if len(address_parts) > 0 else ""
+#         address_line2 = address_parts[1] if len(address_parts) > 1 else ""
+#         address_line3 = address_parts[2] if len(address_parts) > 2 else ""
+
+#         # Map the address data
+#         mapped_address = {
+#             "AddressLine1": address_line1,
+#             "AddressLine2": address_line2,
+#             "AddressLine3": address_line3,
+#             "Town": town,
+#             "Postcode": postcode,
+#             "IsCurrentAddress": True, 
+#             "FromDate": "" 
+#         }
+
+#         return mapped_address
+
+#     except Exception as e:
+#         print(f"Error parsing address: {e}")
+#         return None
+
 def map_address_data(address_string):
     try:
-        # Split the address by newline character
+        # Split the address string by newline
         address_parts = [part.strip() for part in address_string.split('\n')]
         
-        # Check the last part for postcode
-        postcode_pattern = r"[A-Z]{1,2}\d{1,2} ?\d[A-Z]{2}"
+        # UK postcode regular expression
+        postcode_pattern = r"(?<!\w)([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})(?!\w)"
+        
+        # Initialize variables
         postcode = ""
         town = ""
         
-        if address_parts:
-            last_part = address_parts[-1]
-            if re.search(postcode_pattern, last_part):
-                postcode = last_part
-                # Town is the part before the postcode
-                if len(address_parts) > 1:
-                    town = address_parts[-2]  # second last part is the town
-                else:
-                    town = ""
-        
-        # Address lines
-        address_line1 = address_parts[0] if len(address_parts) > 0 else ""
-        address_line2 = address_parts[1] if len(address_parts) > 1 else ""
-        address_line3 = address_parts[2] if len(address_parts) > 2 else ""
+        # Loop through the parts to find postcode and town
+        for part in address_parts:
+            if re.search(postcode_pattern, part):
+                postcode = part.strip()  # Store postcode
+            else:
+                town = part.strip()  # Assume the first non-postcode part is the town
 
-        # Map the address data
+        # Prepare the address lines, excluding mapped parts
+        address_line1 = ""
+        address_line2 = ""
+        address_line3 = ""
+        
+        # Assign AddressLine1, AddressLine2, and AddressLine3 from remaining parts
+        remaining_parts = [part for part in address_parts if part not in {town, postcode}]
+
+        if remaining_parts:
+            address_line1 = remaining_parts[0] if len(remaining_parts) > 0 else ""
+            if len(remaining_parts) > 1:
+                address_line2 = remaining_parts[1]
+            if len(remaining_parts) > 2:
+                address_line3 = remaining_parts[2]
+
         mapped_address = {
             "AddressLine1": address_line1,
             "AddressLine2": address_line2,
             "AddressLine3": address_line3,
             "Town": town,
             "Postcode": postcode,
-            "IsCurrentAddress": True, 
-            "FromDate": "" 
+            "IsCurrentAddress": True,
+            "FromDate": ""
         }
 
         return mapped_address
@@ -94,6 +144,7 @@ def map_address_data(address_string):
     except Exception as e:
         print(f"Error parsing address: {e}")
         return None
+
 
 # Function to map extracted JSON data to the API request structure
 def map_extracted_data_to_api_structure(extracted_data):
